@@ -76,6 +76,10 @@ clangd 通过工具链运行环境启动，用于提供 C/C++ 智能编辑能力
 - 工具链命令会通过应用内的 proot 运行环境在设备上执行。
 - 停止构建时会停止 Android 进程，并对活动的 CMake/Ninja 进程做兜底清理。
 
+### 联系方式
+
+- 邮箱：xiaochenzaine@qq.com
+
 ### 许可证
 
 暂未声明许可证。
@@ -155,6 +159,10 @@ clangd is started through the toolchain runtime and is used for C/C++ intelligen
 - Existing projects keep their own `CMakeLists.txt` and `.clang-format`; template changes only affect newly created projects.
 - Toolchain commands run through the app's proot runtime on device.
 - Build cancellation stops the Android process and uses fallback cleanup for active CMake/Ninja processes.
+
+### Contact
+
+- Email: xiaochenzaine@qq.com
 
 ### License
 
