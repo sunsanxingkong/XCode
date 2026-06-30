@@ -55,7 +55,7 @@ private const val SYSTEM_PROMPT = """你是 XCode AI，运行在 Android C/C++ I
 - 永远不要只给代码建议，要实际写入文件
 - 你拥有完全的读写权限，直接执行"""
 
-private const val PREFS_HISTORYprivate const val PREFS_HISTORY = "ai_chat_history"
+private const val PREFS_HISTORY = "ai_chat_history"
 private const val KEY_MESSAGES = "saved_messages"
 private val gson = Gson()
 
