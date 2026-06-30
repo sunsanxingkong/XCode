@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xc.code.ai.ai_api_client
+import com.xc.code.ai.AiConfig
 import com.xc.code.ui.theme.app_theme_provider
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +39,13 @@ fun main_ai_screen(
     var model_name by remember { mutableStateOf("") }
     var show_api_key by remember { mutableStateOf(false) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    var saved by remember { mutableStateOf(false) }
+    val saved_cfg = remember { ai_api_client.load_config(ctx) }
+    LaunchedEffect(saved_cfg) {
+        api_url = saved_cfg.apiUrl
+        api_key = saved_cfg.apiKey
+        model_name = saved_cfg.modelName
+    }
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -288,12 +297,8 @@ fun main_ai_screen(
             Button(
                 onClick = {
                     // Save to SharedPreferences
-                    val prefs = ctx.getSharedPreferences("ai_config", Context.MODE_PRIVATE)
-                    prefs.edit()
-                        .putString("api_url", api_url.trim())
-                        .putString("api_key", api_key.trim())
-                        .putString("model_name", model_name.trim())
-                        .apply()
+                    ai_api_client.save_config(ctx, AiConfig(api_url.trim(), api_key.trim(), model_name.trim()))
+                    saved = true
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -305,9 +310,19 @@ fun main_ai_screen(
                     contentColor = colors.dialog_clone_text
                 )
             ) {
-                Icon(Icons.Default.Save, null, modifier = Modifier.size(18.dp))
+                Icon(
+                    if (saved) Icons.Default.Check else Icons.Default.Save,
+                    null,
+                    modifier = Modifier.size(18.dp),
+                    tint = if (saved) Color(0xFF4CAF50) else colors.dialog_clone_text
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("保存配置", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    if (saved) "已保存" else "保存配置",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (saved) Color(0xFF4CAF50) else colors.dialog_clone_text
+                )
             }
             Spacer(modifier = Modifier.height(30.dp))
         }

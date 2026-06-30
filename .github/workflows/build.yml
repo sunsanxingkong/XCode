@@ -66,18 +66,21 @@ jobs:
         run: |
           echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
           echo "time=$(date +'%H%M')" >> $GITHUB_OUTPUT
+          APP_VER=$(grep 'versionName' app/build.gradle.kts | grep -oP '"[^"]*"' | tr -d '"')
+          echo "version=${APP_VER}" >> $GITHUB_OUTPUT
           echo "tag=v$(date +'%Y%m%d.%H%M')" >> $GITHUB_OUTPUT
       - name: Rename APK
         run: mv app-release.apk XCode-${{ steps.version.outputs.date }}.apk 2>/dev/null || true
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: XCode Build ${{ steps.version.outputs.date }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: XCode v${{ steps.version.outputs.version }}
           body: |
-            ## 🚀 XCode v${{ steps.version.outputs.date }}.${{ steps.version.outputs.time }}
+            ## 🚀 XCode v${{ steps.version.outputs.version }}
             > 基于 xiaochenzaine/XCode 的 Android C/C++ IDE 增强版
-            
+            > 构建日期: ${{ steps.version.outputs.date }}
+
             ### ✨ 特性
             - 🖥️ 内置完整 Ubuntu 24.04 终端环境
             - 📝 强大的代码编辑器（语法高亮、代码补全）
@@ -85,12 +88,12 @@ jobs:
             - 📦 支持多版本 NDK 安装管理（R25-R29）
             - 🤖 AI 智能助手（支持自定义 OpenAI 兼容 API）
             - 🧩 插件扩展系统
-            
+
             ### 📥 安装
             1. 下载 APK
             2. 允许「安装未知应用」权限
             3. 首次启动自动下载 Ubuntu 基础环境（约 300MB）
-            
+
             ### ⚙️ 要求
             - Android 8.0+（API 26+）
             - arm64-v8a 架构
