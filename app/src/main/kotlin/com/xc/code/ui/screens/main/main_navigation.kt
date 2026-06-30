@@ -227,7 +227,7 @@ fun main_navigation(
                 )
             }
             composable("editor_theme_settings") { editor_theme_settings_screen(on_back = { nav_controller.popBackStack() }) }
-            composable("agent") { placeholder_screen("智能") { nav_controller.popBackStack() } }
+            composable("agent") { main_ai_screen(on_back = { nav_controller.popBackStack() }) }
         }
 
         if (active_toolchain_trigger != null && !toolchain_dialog_visible) {

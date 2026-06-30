@@ -105,11 +105,48 @@ private fun cmake_tool_items(installed_versions: Set<String>): List<main_tool_do
 
 private val ndk_download_items = listOf(
     main_tool_download_item(
-        version = "Android NDK R29",
+        version = "Android NDK R29 (OLLVM)",
         install_key = "android-ndk-r29",
         url = "https://github.com/SodaMilk233/OLLVM_NDK/releases/download/android-ndk-r29/android-ndk-r29.tar.xz",
         sha256 = "bd59e5b7895a069a13d77f19b024c9546c53e834a51d161c35e369a7c477ba1a"
+    ),
+    main_tool_download_item(
+        version = "Android NDK R28 (OLLVM)",
+        install_key = "android-ndk-r28",
+        url = "https://github.com/SodaMilk233/OLLVM_NDK/releases/download/android-ndk-r28/android-ndk-r28.tar.xz",
+        sha256 = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1"
+    ),
+    main_tool_download_item(
+        version = "NDK 29.0.14206865 (Google)",
+        install_key = "29.0.14206865",
+        url = "https://dl.google.com/android/repository/android-ndk-r29-linux.zip",
+        sha256 = ""
+    ),
+    main_tool_download_item(
+        version = "NDK 28.0.13004108 (Google)",
+        install_key = "28.0.13004108",
+        url = "https://dl.google.com/android/repository/android-ndk-r28-linux.zip",
+        sha256 = ""
+    ),
+    main_tool_download_item(
+        version = "NDK 27.0.12077973 (Google)",
+        install_key = "27.0.12077973",
+        url = "https://dl.google.com/android/repository/android-ndk-r27-linux.zip",
+        sha256 = ""
+    ),
+    main_tool_download_item(
+        version = "NDK 26.3.11579264 (Google)",
+        install_key = "26.3.11579264",
+        url = "https://dl.google.com/android/repository/android-ndk-r26-linux.zip",
+        sha256 = ""
+    ),
+    main_tool_download_item(
+        version = "NDK 25.2.9519653 (Google)",
+        install_key = "25.2.9519653",
+        url = "https://dl.google.com/android/repository/android-ndk-r25-linux.zip",
+        sha256 = ""
     )
+)
 )
 
 @Composable
