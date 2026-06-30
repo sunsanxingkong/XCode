@@ -147,7 +147,6 @@ private val ndk_download_items = listOf(
         sha256 = ""
     )
 )
-)
 
 @Composable
 fun main_tools_screen(
