@@ -75,17 +75,26 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: XCode Build ${{ steps.version.outputs.date }}
           body: |
-            ## XCode 自动构建发行包
-            ### 构建信息
-            - 版本: ${{ steps.version.outputs.date }}.${{ steps.version.outputs.time }}
-            - 提交: ${{ github.sha }}
-            ### 更新内容
-            - 基于 xiaochenzaine/XCode 最新源码
-            - 修复 clangd VFS build dir 报错
-            - Release APK (arm64-v8a)
-            ### 安装要求
-            - Android 8.0+ (API 26+)
+            ## 🚀 XCode v${{ steps.version.outputs.date }}.${{ steps.version.outputs.time }}
+            > 基于 xiaochenzaine/XCode 的 Android C/C++ IDE 增强版
+            
+            ### ✨ 特性
+            - 🖥️ 内置完整 Ubuntu 24.04 终端环境
+            - 📝 强大的代码编辑器（语法高亮、代码补全）
+            - 🔧 集成 CMake 工具链管理
+            - 📦 支持多版本 NDK 安装管理（R25-R29）
+            - 🤖 AI 智能助手（支持自定义 OpenAI 兼容 API）
+            - 🧩 插件扩展系统
+            
+            ### 📥 安装
+            1. 下载 APK
+            2. 允许「安装未知应用」权限
+            3. 首次启动自动下载 Ubuntu 基础环境（约 300MB）
+            
+            ### ⚙️ 要求
+            - Android 8.0+（API 26+）
             - arm64-v8a 架构
+            - 充足存储空间（建议 2GB+）
           files: XCode-*.apk
           draft: false
           prerelease: false
