@@ -161,7 +161,7 @@ object ai_api_client {
             description = "获取项目概览信息：总文件数、目录结构、各类型文件统计",
             parameters = mapOf(
                 "type" to "object",
-                "properties" to mapOf<String, Any?>(
+                "properties" to mapOf(
                     "deep" to mapOf("type" to "boolean", "description" to "可选，是否深度扫描（默认true），false只统计根目录")
                 ),
                 "required" to listOf()
