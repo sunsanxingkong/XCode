@@ -180,6 +180,7 @@ object ai_api_client {
         ))
     )
 
+
     suspend fun chat_with_tools(
         ctx: Context,
         messages: List<ChatMessage>,
@@ -247,7 +248,6 @@ object ai_api_client {
             val result_messages = mutableListOf<ChatMessage>()
 
             if (tool_calls_raw != null && tool_calls_raw.isNotEmpty()) {
-                // AI wants to call tools
                 val tc_list = tool_calls_raw.map { tc ->
                     mapOf(
                         "id" to (tc["id"] ?: ""),
@@ -264,7 +264,6 @@ object ai_api_client {
                     tool_calls = tc_list
                 ))
 
-                // Execute each tool call
                 for (tc in tool_calls_raw) {
                     val func = tc["function"] as? Map<*, *>
                     val name = func?.get("name") as? String ?: continue
@@ -272,7 +271,6 @@ object ai_api_client {
                     val args_raw = func?.get("arguments") as? String ?: "{}"
                     @Suppress("UNCHECKED_CAST")
                     val args = try { gson.fromJson(args_raw, Map::class.java) as Map<String, String> } catch (_: Exception) { emptyMap() }
-
                     val result = execute_tool(name, args, project_root)
                     result_messages.add(ChatMessage(
                         role = "tool",
@@ -283,22 +281,55 @@ object ai_api_client {
 
                 Result.success(result_messages)
             } else {
-                // Normal text response
                 result_messages.add(ChatMessage(role = "assistant", content = content ?: ""))
                 Result.success(result_messages)
             }
 
-
-    private fun execute_tool(name: String, args: Map<String, String>, root: String): String {
-        return try {
-            when (name) {        } catch (e: Exception) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-
+    private fun execute_tool(name: String, args: Map<String, String>, root: String): String {
+        return try {
+            when (name) {
+                "read_file" -> {
+                    val path = args["path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 path \u53c2\u6570"
+                    val file = java.io.File(root, path.trimStart('/'))
+                    if (file.isFile) file.readText() else "\u9519\u8bef: \u6587\u4ef6\u4e0d\u5b58\u5728 $path"
+                }
+                "write_file" -> {
+                    val path = args["path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 path \u53c2\u6570"
+                    val text = args["content"] ?: return "\u9519\u8bef: \u7f3a\u5c11 content \u53c2\u6570"
+                    val file = java.io.File(root, path.trimStart('/'))
+                    file.parentFile?.mkdirs()
+                    file.writeText(text)
+                    "\u6210\u529f\u5199\u5165\u6587\u4ef6: $path (${text.length} \u5b57\u7b26)"
+                }
+                "create_file" -> {
+                    val path = args["path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 path \u53c2\u6570"
+                    val text = args["content"] ?: ""
+                    val file = java.io.File(root, path.trimStart('/'))
+                    file.parentFile?.mkdirs()
+                    file.writeText(text)
+                    "\u6210\u529f\u521b\u5efa\u6587\u4ef6: $path"
+                }
+                "delete_file" -> {
+                    val path = args["path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 path \u53c2\u6570"
+                    val file = java.io.File(root, path.trimStart('/'))
+                    if (file.delete()) "\u6210\u529f\u5220\u9664\u6587\u4ef6: $path" else "\u9519\u8bef: \u5220\u9664\u5931\u8d25 $path"
+                }
+                "list_files" -> {
+                    val dir = args["dir"] ?: ""
+                    val dirFile = java.io.File(root, dir.trimStart('/'))
+                    if (!dirFile.isDirectory) return "\u9519\u8bef: \u76ee\u5f55\u4e0d\u5b58\u5728 $dir"
+                    dirFile.listFiles()?.map { f ->
+                        val type = if (f.isDirectory) "[DIR]" else "[FILE]"
+                        "$type ${f.name} (${f.length()} bytes)"
+                    }?.joinToString("\n") ?: "\u7a7a\u76ee\u5f55"
+                }
                 "search_files" -> {
-                    val pattern = args["pattern"] ?: return "错误: 缺少 pattern 参数"
+                    val pattern = args["pattern"] ?: return "\u9519\u8bef: \u7f3a\u5c11 pattern \u53c2\u6570"
                     val rootDir = java.io.File(root)
                     val results = mutableListOf<String>()
                     rootDir.walkTopDown().maxDepth(10).forEach { f ->
@@ -307,68 +338,65 @@ object ai_api_client {
                             results.add(relPath)
                         }
                     }
-                    if (results.isEmpty()) "未找到匹配的文件"
-                    else results.joinToString("
-")
+                    if (results.isEmpty()) "\u672a\u627e\u5230\u5339\u914d\u7684\u6587\u4ef6"
+                    else results.joinToString("\n")
                 }
                 "grep_files" -> {
-                    val pattern = args["pattern"] ?: return "错误: 缺少 pattern 参数"
+                    val pattern = args["pattern"] ?: return "\u9519\u8bef: \u7f3a\u5c11 pattern \u53c2\u6570"
                     val ext = args["extension"] ?: ""
                     val rootDir = java.io.File(root)
                     val results = mutableListOf<String>()
                     rootDir.walkTopDown().maxDepth(10).forEach { f ->
                         if (f.isFile && (ext.isBlank() || f.name.endsWith(ext))) {
                             try {
-                                val content = f.readText()
-                                if (content.contains(pattern, ignoreCase = true)) {
+                                val fc = f.readText()
+                                if (fc.contains(pattern, ignoreCase = true)) {
                                     val relPath = f.relativeTo(rootDir).path
-                                    val lines = content.lines()
-                                    val matchingLines = lines.filterIndexed { i, l -> l.contains(pattern, ignoreCase = true) }
-                                    results.add("$relPath: ${matchingLines.size} 行匹配")
+                                    val matchingLines = fc.lines().count { l -> l.contains(pattern, ignoreCase = true) }
+                                    results.add("$relPath: $matchingLines \u884c\u5339\u914d")
                                 }
                             } catch (_: Exception) {}
                         }
                     }
-                    if (results.isEmpty()) "未找到匹配的内容"
-                    else results.joinToString("
-")
+                    if (results.isEmpty()) "\u672a\u627e\u5230\u5339\u914d\u7684\u5185\u5bb9"
+                    else results.joinToString("\n")
                 }
                 "rename_file" -> {
-                    val oldPath = args["old_path"] ?: return "错误: 缺少 old_path 参数"
-                    val newPath = args["new_path"] ?: return "错误: 缺少 new_path 参数"
+                    val oldPath = args["old_path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 old_path \u53c2\u6570"
+                    val newPath = args["new_path"] ?: return "\u9519\u8bef: \u7f3a\u5c11 new_path \u53c2\u6570"
                     val oldFile = java.io.File(root, oldPath.trimStart('/'))
                     val newFile = java.io.File(root, newPath.trimStart('/'))
-                    if (!oldFile.exists()) return "错误: 源文件不存在 $oldPath"
+                    if (!oldFile.exists()) return "\u9519\u8bef: \u6e90\u6587\u4ef6\u4e0d\u5b58\u5728 $oldPath"
                     newFile.parentFile?.mkdirs()
-                    if (oldFile.renameTo(newFile)) "成功重命名: $oldPath -> $newPath"
-                    else "错误: 重命名失败"
+                    if (oldFile.renameTo(newFile)) "\u6210\u529f\u91cd\u547d\u540d: $oldPath -> $newPath"
+                    else "\u9519\u8bef: \u91cd\u547d\u540d\u5931\u8d25"
                 }
                 "get_project_info" -> {
                     val rootDir = java.io.File(root)
-                    if (!rootDir.isDirectory) return "错误: 项目目录不存在"
+                    if (!rootDir.isDirectory) return "\u9519\u8bef: \u9879\u76ee\u76ee\u5f55\u4e0d\u5b58\u5728"
                     val allFiles = rootDir.walkTopDown().maxDepth(15).filter { it.isFile }.toList()
                     val totalSize = allFiles.sumOf { it.length() }
-                    val extensions = allFiles.groupBy { it.extension.ifEmpty { "(无扩展名)" } }.mapValues { it.value.size }
+                    val extensions = allFiles.groupBy { it.extension.ifEmpty { "(\u65e0\u6269\u5c55\u540d)" } }.mapValues { it.value.size }
                     val dirCount = rootDir.walkTopDown().maxDepth(15).filter { it.isDirectory }.count()
                     val topDirs = rootDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
                     buildString {
-                        appendLine("📁 项目: ${rootDir.name}")
-                        appendLine("📂 路径: $root")
-                        appendLine("📄 文件总数: ${allFiles.size}")
-                        appendLine("📏 总大小: ${totalSize / 1024} KB")
-                        appendLine("📁 目录数: $dirCount")
+                        appendLine("\ud83d\udcc1 \u9879\u76ee: ${rootDir.name}")
+                        appendLine("\ud83d\udcc2 \u8def\u5f84: $root")
+                        appendLine("\ud83d\udcc4 \u6587\u4ef6\u603b\u6570: ${allFiles.size}")
+                        appendLine("\ud83d\udccf \u603b\u5927\u5c0f: ${totalSize / 1024} KB")
+                        appendLine("\ud83d\udcc1 \u76ee\u5f55\u6570: $dirCount")
                         appendLine("")
-                        appendLine("📊 文件类型分布:")
+                        appendLine("\ud83d\udcca \u6587\u4ef6\u7c7b\u578b\u5206\u5e03:")
                         extensions.entries.sortedByDescending { it.value }.take(15).forEach { (ext, count) ->
-                            appendLine("  .$ext: $count 个")
+                            appendLine("  .$ext: $count \u4e2a")
                         }
                         appendLine("")
-                        appendLine("📂 顶层目录:")
-                        topDirs.forEach { appendLine("  📁 $it") }
+                        appendLine("\ud83d\udcc2 \u9876\u5c42\u76ee\u5f55:")
+                        topDirs.forEach { appendLine("  \ud83d\udcc1 $it") }
                     }
                 }
                 "run_command" -> {
-                    val cmd = args["command"] ?: return "错误: 缺少 command 参数"
+                    val cmd = args["command"] ?: return "\u9519\u8bef: \u7f3a\u5c11 command \u53c2\u6570"
                     try {
                         val proc = ProcessBuilder()
                             .directory(java.io.File(root))
@@ -377,18 +405,16 @@ object ai_api_client {
                             .start()
                         val output = proc.inputStream.bufferedReader().readText()
                         val code = proc.waitFor()
-                        if (code == 0) "✅ 命令执行成功 (exit=$code):
-$output"
-                        else "⚠️ 命令完成但有错误 (exit=$code):
-$output"
+                        if (code == 0) "\u2705 \u547d\u4ee4\u6267\u884c\u6210\u529f (exit=$code):\n$output"
+                        else "\u26a0\ufe0f \u547d\u4ee4\u5b8c\u6210\u4f46\u6709\u9519\u8bef (exit=$code):\n$output"
                     } catch (e: Exception) {
-                        "错误: 执行命令失败: ${e.message}"
+                        "\u9519\u8bef: \u6267\u884c\u547d\u4ee4\u5931\u8d25: ${e.message}"
                     }
                 }
-                else -> "未知工具: $name"
+                else -> "\u672a\u77e5\u5de5\u5177: $name"
             }
         } catch (e: Exception) {
-            "执行 $name 出错: ${e.message}"
+            "\u6267\u884c $name \u51fa\u9519: ${e.message}"
         }
     }
 }
