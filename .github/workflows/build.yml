@@ -34,7 +34,10 @@ jobs:
           CMAKE_VER="4.3.0"
           wget -q "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz" -O /tmp/cmake.tar.gz
           tar -xzf /tmp/cmake.tar.gz -C /opt/
-          echo "cmake.dir=/opt/cmake-${CMAKE_VER}-linux-x86_64" >> gradle.properties
+          mkdir -p $ANDROID_SDK_ROOT/cmake
+          ln -sf /opt/cmake-${CMAKE_VER}-linux-x86_64 $ANDROID_SDK_ROOT/cmake/4.3.0
+          echo "cmake.dir=/opt/cmake-${CMAKE_VER}-linux-x86_64" >> local.properties
+          echo "$ANDROID_SDK_ROOT/cmake/4.3.0/bin" >> $GITHUB_PATH
           /opt/cmake-${CMAKE_VER}-linux-x86_64/bin/cmake --version
       - name: Grant Permission
         run: chmod +x gradlew
