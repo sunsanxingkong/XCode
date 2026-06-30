@@ -168,6 +168,29 @@ object ai_api_client {
             )
         )),
         ToolDefinition(function = ToolFunction(
+            name = "visit_web",
+            description = "访问网页获取内容（如查看文档、搜索信息等）",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "url" to mapOf("type" to "string", "description" to "要访问的网页URL")
+                ),
+                "required" to listOf("url")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "download_file",
+            description = "从网络下载文件到项目目录",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "url" to mapOf("type" to "string", "description" to "文件的下载URL"),
+                    "dest" to mapOf("type" to "string", "description" to "保存路径，相对于项目根目录")
+                ),
+                "required" to listOf("url", "dest")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
             name = "run_command",
             description = "在项目根目录执行终端命令（如编译、运行、git操作等）",
             parameters = mapOf(
@@ -409,6 +432,39 @@ object ai_api_client {
                         else "\u26a0\ufe0f \u547d\u4ee4\u5b8c\u6210\u4f46\u6709\u9519\u8bef (exit=$code):\n$output"
                     } catch (e: Exception) {
                         "\u9519\u8bef: \u6267\u884c\u547d\u4ee4\u5931\u8d25: ${e.message}"
+                    }
+                }
+                "visit_web" -> {
+                    val url = args["url"] ?: return "\u9519\u8bef: \u7f3a\u5c11 url \u53c2\u6570"
+                    try {
+                        val conn = java.net.URL(url).openConnection() as HttpURLConnection
+                        conn.requestMethod = "GET"
+                        conn.connectTimeout = 15000
+                        conn.readTimeout = 30000
+                        val code = conn.responseCode
+                        val body = BufferedReader(InputStreamReader(conn.inputStream)).readText()
+                        conn.disconnect()
+                        if (body.length > 2000) body.take(2000) + "\n... [\u4ec5\u663e\u793a\u524d2000\u5b57\u7b26]"
+                        else body
+                    } catch (e: Exception) {
+                        "\u9519\u8bef: \u8bbf\u95ee\u7f51\u9875\u5931\u8d25: ${e.message}"
+                    }
+                }
+                "download_file" -> {
+                    val url = args["url"] ?: return "\u9519\u8bef: \u7f3a\u5c11 url \u53c2\u6570"
+                    val dest = args["dest"] ?: return "\u9519\u8bef: \u7f3a\u5c11 dest \u53c2\u6570"
+                    try {
+                        val conn = java.net.URL(url).openConnection() as HttpURLConnection
+                        conn.connectTimeout = 30000
+                        conn.readTimeout = 60000
+                        val inputStream = conn.inputStream
+                        val file = java.io.File(root, dest.trimStart('/'))
+                        file.parentFile?.mkdirs()
+                        file.outputStream().use { output -> inputStream.copyTo(output) }
+                        conn.disconnect()
+                        "\u6210\u529f\u4e0b\u8f7d\u6587\u4ef6: $dest (${file.length()} \u5b57\u8282)"
+                    } catch (e: Exception) {
+                        "\u9519\u8bef: \u4e0b\u8f7d\u6587\u4ef6\u5931\u8d25: ${e.message}"
                     }
                 }
                 else -> "\u672a\u77e5\u5de5\u5177: $name"
