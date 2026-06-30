@@ -27,9 +27,57 @@ jobs:
         run: chmod +x gradlew
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon
-      - name: Upload APK
+      - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: XCode-Release
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: XCode-Release
+
+      - name: Get Version
+        id: version
+        run: |
+          echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+          echo "time=$(date +'%H%M')" >> $GITHUB_OUTPUT
+          echo "tag=v$(date +'%Y%m%d.%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Rename APK
+        run: |
+          mv app-release.apk XCode-${{ steps.version.outputs.date }}.apk 2>/dev/null || true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: XCode Build ${{ steps.version.outputs.date }}
+          body: |
+            ## XCode 自动构建发行包
+
+            ### 构建信息
+            - 版本: ${{ steps.version.outputs.date }}.${{ steps.version.outputs.time }}
+            - 提交: ${{ github.sha }}
+            - 分支: ${{ github.ref_name }}
+
+            ### 更新内容
+            - 基于 [xiaochenzaine/XCode](https://github.com/xiaochenzaine/XCode) 最新源码
+            - 修复 clangd VFS build dir 报错
+            - Release APK (arm64-v8a)
+
+            ### 安装要求
+            - Android 8.0+ (API 26+)
+            - arm64-v8a 架构
+          files: XCode-*.apk
+          draft: false
+          prerelease: false
