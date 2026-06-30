@@ -50,7 +50,7 @@ fun editor_ai_panel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(Icons.AutoAwesome, null, tint = colors.editor_icon, modifier = Modifier.size(18.dp))
+            Icon(Icons.Filled.AutoAwesome, null, tint = colors.editor_icon, modifier = Modifier.size(18.dp))
             Text("AI 助手", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = colors.editor_text)
             if (has_config) {
                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
@@ -72,7 +72,7 @@ fun editor_ai_panel(
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.AutoAwesome, null, tint = colors.editor_hint, modifier = Modifier.size(36.dp))
+                            Icon(Icons.Filled.AutoAwesome, null, tint = colors.editor_hint, modifier = Modifier.size(36.dp))
                             Text("AI 代码助手", fontSize = 14.sp, color = colors.editor_text, fontWeight = FontWeight.Bold)
                             Text(
                                 if (has_config) "输入问题开始对话" else "请先在设置中配置 AI API",
