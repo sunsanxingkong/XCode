@@ -160,7 +160,7 @@ fun editor_sidebar(
                         on_apply = on_project_config_apply,
                         modifier = Modifier.fillMaxSize()
                     )
-                    2 -> sidebar_placeholder("助手")
+                    2 -> editor_ai_panel(modifier = Modifier.fillMaxSize())
                     3 -> editor_settings_panel(
                         settings = editor_settings,
                         on_settings_change = on_editor_settings_change,
