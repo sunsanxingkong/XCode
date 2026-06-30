@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +36,7 @@ fun main_ai_screen(
     var api_key by remember { mutableStateOf("") }
     var model_name by remember { mutableStateOf("") }
     var show_api_key by remember { mutableStateOf(false) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -285,7 +288,6 @@ fun main_ai_screen(
             Button(
                 onClick = {
                     // Save to SharedPreferences
-                    val ctx = androidx.compose.ui.platform.LocalContext.current
                     val prefs = ctx.getSharedPreferences("ai_config", Context.MODE_PRIVATE)
                     prefs.edit()
                         .putString("api_url", api_url.trim())
