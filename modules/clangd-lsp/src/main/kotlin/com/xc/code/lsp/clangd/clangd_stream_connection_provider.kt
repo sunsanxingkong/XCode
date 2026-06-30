@@ -31,6 +31,7 @@ class clangd_stream_connection_provider(
         if (process?.isAlive == true) return
         validate_runtime()
         patcher.patch(config.runtime_paths)
+        config.build_dir.mkdirs()
 
         val command = build_proot_clangd_command()
         val process_environment = proot_environment(
