@@ -164,7 +164,7 @@ object ai_api_client {
                 "properties" to mapOf(
                     "deep" to mapOf("type" to "boolean", "description" to "可选，是否深度扫描（默认true），false只统计根目录")
                 ),
-                "required" to listOf()
+                "required" to emptyList<String>()
             )
         )),
         ToolDefinition(function = ToolFunction(
