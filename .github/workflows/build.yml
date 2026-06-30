@@ -71,7 +71,9 @@ jobs:
           echo "version=${APP_VER}" >> $GITHUB_OUTPUT
           echo "tag=v$(date +'%Y%m%d.%H%M')" >> $GITHUB_OUTPUT
       - name: Rename APK
-        run: mv app-release.apk XCode-${{ steps.version.outputs.date }}.apk 2>/dev/null || true
+        run: |
+          find . -name "app-release.apk" -exec mv {} XCode-${{ steps.version.outputs.date }}.apk \;
+          ls -la XCode-*.apk
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
