@@ -61,6 +61,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: XCode-Release
+      - uses: actions/checkout@v4
       - name: Get Version
         id: version
         run: |
