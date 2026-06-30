@@ -21,6 +21,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.xc.code.ai.ChatMessage
 import com.xc.code.ai.ai_api_client
+import androidx.compose.runtime.mutableStateListOf
 import com.xc.code.ui.theme.app_theme_provider
 import kotlinx.coroutines.launch
 
@@ -67,12 +68,17 @@ fun editor_ai_panel(
     val list_state = rememberLazyListState()
     val has_config = remember { ai_api_client.has_config(ctx) }
     var status_msg by remember { mutableStateOf("") }
+    var chat_history = remember { mutableStateListOf<ChatMessage>() }
 
     LaunchedEffect(Unit) {
-        if (messages.isEmpty() || messages.first().first != "system") {
+        if (chat_history.isEmpty() || chat_history.first().role != "system") {
             val sysMsg = ChatMessage("system", SYSTEM_PROMPT)
-            val saved = messages.filter { it.first != "system" }
-            messages = listOf("system" to SYSTEM_PROMPT) + saved
+            // Rebuild history: keep system prompt + convert saved display messages
+            val saved_msgs = messages.filter { it.first != "system" && it.first != "system_ui" && it.first != "tool_result" }.map { m ->
+                ChatMessage(if (m.first == "assistant") "assistant" else "user", m.second)
+            }
+            chat_history.addAll(listOf(sysMsg) + saved_msgs)
+            messages = listOf("system" to SYSTEM_PROMPT) + messages.filter { it.first != "system" }
         }
     }
 
@@ -228,21 +234,11 @@ fun editor_ai_panel(
                         status_msg = ""
 
                         scope.launch {
-                            // Convert to ChatMessage list for API
-                            // Convert to ChatMessage list for API (exclude system_ui and map tool_result to tool)
-                            val skip_roles = setOf("system_ui")
-                            val chat_msgs = messages.filter { it.first !in skip_roles }.map { m ->
-                                when (m.first) {
-                                    "system" -> ChatMessage("system", m.second, null, null)
-                                    "user" -> ChatMessage("user", m.second, null, null)
-                                    "assistant" -> ChatMessage("assistant", m.second, null, null)
-                                    "tool_result" -> ChatMessage("tool", m.second, null, null)
-                                    else -> ChatMessage("user", m.second, null, null)
-                                }
-                            }
+                            // Add user message to ChatMessage history (preserves tool_call_id)
+                            chat_history.add(ChatMessage("user", text + project_context))
 
                             // Run tool loop: send request, execute tools, repeat
-                            var current_msgs = chat_msgs
+                            var current_msgs = chat_history.toList()
                             var final_text = ""
                             var loop_count = 0
                             val max_loops = 10

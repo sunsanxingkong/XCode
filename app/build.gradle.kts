@@ -14,8 +14,8 @@ android {
         applicationId = "com.xc.code"
         minSdk = 26
         targetSdk = 28
-        versionCode = 201
-        versionName = "2.1.0"
+        versionCode = 202
+        versionName = "2.2.0"
         
         ndk {
             abiFilters.add("arm64-v8a")
