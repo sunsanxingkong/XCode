@@ -28,7 +28,7 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0" \
             "ndk;29.0.14206865" \
-            "cmake;3.31.5" \
+            "cmake;4.3.0" \
             2>&1
       - name: Grant Permission
         run: chmod +x gradlew
