@@ -237,9 +237,8 @@ fun editor_ai_panel(
                             // Add user message to ChatMessage history (preserves tool_call_id)
                             chat_history.add(ChatMessage("user", text + project_context))
 
-                            // Run tool loop: send request, execute tools, repeat
+                            // Run tool loop using current_msgs (accumulated from chat_history)
                             var current_msgs = chat_history.toList()
-                            var final_text = ""
                             var loop_count = 0
                             val max_loops = 10
 
@@ -249,9 +248,12 @@ fun editor_ai_panel(
 
                                 result.onSuccess { new_messages ->
                                     if (new_messages.isEmpty()) {
-                                        final_text = "错误: AI 返回为空"
+                                        messages = messages + ("assistant" to "错误: AI 返回为空")
                                         break
                                     }
+
+                                    // Add to accumulated history
+                                    current_msgs = current_msgs + new_messages
 
                                     // Check if last message has tool_calls
                                     val last = new_messages.last()
@@ -263,27 +265,21 @@ fun editor_ai_panel(
                                         }
                                         val toolSummary = toolNames.joinToString(", ")
                                         messages = messages + ("system_ui" to "⚙️ AI 正在调用工具: $toolSummary")
-                                        
-                                        // Add all messages and continue
-                                        val history_msgs = new_messages.map { m ->
-                                            if (m.role == "tool") "tool_result" to ("📌 " + (m.content ?: ""))
-                                            else "tool" to (m.content ?: "")
+
+                                        // Add tool results to display
+                                        val details = new_messages.filter { it.role == "tool" }.mapNotNull { "📌 " + (it.content ?: "") }
+                                        for (d in details) {
+                                            messages = messages + ("tool_result" to d)
                                         }
-                                        for (hm in history_msgs) {
-                                            messages = messages + hm
-                                        }
-                                        // Convert back to ChatMessage for next loop
-                                        current_msgs = current_msgs + new_messages
                                         status_msg = "⚙️ 正在调用: $toolSummary"
                                     } else {
                                         // AI responded with text - done!
-                                        final_text = last.content ?: ""
+                                        val final_text = last.content ?: ""
                                         messages = messages + ("assistant" to final_text)
                                         break
                                     }
                                 }.onFailure { err ->
-                                    final_text = "错误: ${err.message}"
-                                    messages = messages + ("assistant" to final_text)
+                                    messages = messages + ("assistant" to "错误: ${err.message}")
                                     break
                                 }
                             }
@@ -292,10 +288,13 @@ fun editor_ai_panel(
                                 messages = messages + ("assistant" to "工具调用次数过多，请简化请求")
                             }
 
+                            // CRITICAL FIX: update chat_history with accumulated history for next conversation turn
+                            chat_history.clear()
+                            chat_history.addAll(current_msgs)
+
                             status_msg = ""
                             loading = false
-                        }
-                    }
+                        }                    }
                 },
                 enabled = input_text.isNotBlank() && !loading,
                 modifier = Modifier.size(40.dp),
