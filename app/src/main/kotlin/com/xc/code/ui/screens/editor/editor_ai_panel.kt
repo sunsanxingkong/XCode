@@ -267,7 +267,7 @@ fun editor_ai_panel(
                                     if (last.tool_calls != null && last.tool_calls.isNotEmpty()) {
                                         // AI called tools - show tool names in UI
                                         val toolNames = last.tool_calls.mapNotNull { tc ->
-                                            val func = tc["function"] as? Map<*, ?>
+                                            val func = tc["function"] as? Map<*, *>
                                             func?.get("name") as? String
                                         }
                                         val toolSummary = toolNames.joinToString(", ")
