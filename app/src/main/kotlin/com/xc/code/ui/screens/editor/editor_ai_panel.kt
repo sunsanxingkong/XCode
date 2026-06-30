@@ -35,15 +35,23 @@ private const val SYSTEM_PROMPT = """你是 XCode AI，运行在 Android C/C++ I
    - create_file(path, content) - 创建新文件
    - delete_file(path) - 删除文件
    - list_files(dir) - 列出目录内容
+   - search_files(pattern) - 在项目中搜索匹配模式的文件
+   - grep_files(pattern, extension) - 在项目中搜索文件内容（支持指定文件类型）
+   - rename_file(old_path, new_path) - 重命名或移动文件
+   - get_project_info() - 获取项目概览（目录结构、文件数等）
+   - run_command(command) - 在项目目录中执行终端命令
 3. 当用户要求创建/修改项目时，调用 write_file 或 create_file 直接写入文件
-4. 当用户打开项目后，你应该先 list_files 了解项目结构再行动
+4. 当用户打开项目后，你应该先 get_project_info 或 list_files 了解项目结构再行动
 5. 回复要简洁直接，不要啰嗦
 
 == 重要 ==
 - 用户说"给我写个XX项目" → 直接调用 create_file/write_file 创建所有文件
 - 用户说"修改XX文件" → 先 read_file 读取，再 write_file 写入修改后的内容
+- 用户说"找XX文件"或"搜索XX" → 调用 search_files 或 grep_files
+- 用户说"重命名"或"移动" → 调用 rename_file
 - 永远不要只给代码建议，要实际写入文件
-- 你拥有完全的读写权限，直接执行"""
+- 你拥有完全的读写权限，直接执行
+- 响应速度要快，让用户等太久是不好的"""
 
 private const val PREFS_HISTORY = "ai_chat_history"
 private const val KEY_MESSAGES = "saved_messages"
@@ -76,9 +84,7 @@ fun editor_ai_panel(
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            kotlinx.coroutines.launch {
-                list_state.animateScrollToItem(messages.size - 1)
-            }
+            list_state.animateScrollToItem(messages.size - 1)
         }
         save_history(ctx, messages)
     }

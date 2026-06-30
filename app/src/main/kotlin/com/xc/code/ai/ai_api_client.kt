@@ -70,18 +70,18 @@ object ai_api_client {
             parameters = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
-                    "path" to mapOf("type" to "string", "description" to "文件相对路径，如 src/main.cpp")
+                    "path" to mapOf("type" to "string", "description" to "文件路径，相对于项目根目录")
                 ),
                 "required" to listOf("path")
             )
         )),
         ToolDefinition(function = ToolFunction(
             name = "write_file",
-            description = "写入内容到项目中的指定文件（自动创建目录）",
+            description = "写入内容到项目中的指定文件（自动创建父目录）",
             parameters = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
-                    "path" to mapOf("type" to "string", "description" to "文件相对路径，如 src/main.cpp"),
+                    "path" to mapOf("type" to "string", "description" to "文件路径，相对于项目根目录"),
                     "content" to mapOf("type" to "string", "description" to "要写入的文件内容")
                 ),
                 "required" to listOf("path", "content")
@@ -89,36 +89,93 @@ object ai_api_client {
         )),
         ToolDefinition(function = ToolFunction(
             name = "create_file",
-            description = "创建新文件",
+            description = "创建新文件并写入初始内容",
             parameters = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
-                    "path" to mapOf("type" to "string", "description" to "文件相对路径"),
-                    "content" to mapOf("type" to "string", "description" to "文件内容")
+                    "path" to mapOf("type" to "string", "description" to "文件路径，相对于项目根目录"),
+                    "content" to mapOf("type" to "string", "description" to "文件初始内容")
                 ),
                 "required" to listOf("path", "content")
             )
         )),
         ToolDefinition(function = ToolFunction(
             name = "delete_file",
-            description = "删除文件",
+            description = "删除指定的文件",
             parameters = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
-                    "path" to mapOf("type" to "string", "description" to "文件相对路径")
+                    "path" to mapOf("type" to "string", "description" to "文件路径，相对于项目根目录")
                 ),
                 "required" to listOf("path")
             )
         )),
         ToolDefinition(function = ToolFunction(
             name = "list_files",
-            description = "列出目录中的文件和文件夹",
+            description = "列出指定目录中的文件和文件夹",
             parameters = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
-                    "dir" to mapOf("type" to "string", "description" to "目录相对路径，空字符串表示项目根目录")
+                    "dir" to mapOf("type" to "string", "description" to "目录路径，相对于项目根目录；空字符串表示项目根目录")
                 ),
                 "required" to listOf("dir")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "search_files",
+            description = "在项目中按文件名模式搜索文件，支持通配符如 *.kt、*.cpp、main*",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "pattern" to mapOf("type" to "string", "description" to "搜索模式，如 *.kt、main.cpp、*test*")
+                ),
+                "required" to listOf("pattern")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "grep_files",
+            description = "在项目文件中搜索文本内容，可按文件扩展名过滤",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "pattern" to mapOf("type" to "string", "description" to "要搜索的文本或正则表达式"),
+                    "extension" to mapOf("type" to "string", "description" to "可选，文件扩展名过滤，如 .kt、.cpp、.h，不传则搜索所有文件")
+                ),
+                "required" to listOf("pattern")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "rename_file",
+            description = "重命名或移动文件到新位置",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "old_path" to mapOf("type" to "string", "description" to "原文件路径，相对于项目根目录"),
+                    "new_path" to mapOf("type" to "string", "description" to "新文件路径，相对于项目根目录")
+                ),
+                "required" to listOf("old_path", "new_path")
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "get_project_info",
+            description = "获取项目概览信息：总文件数、目录结构、各类型文件统计",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf<String, Any?>(
+                    "deep" to mapOf("type" to "boolean", "description" to "可选，是否深度扫描（默认true），false只统计根目录")
+                ),
+                "required" to listOf()
+            )
+        )),
+        ToolDefinition(function = ToolFunction(
+            name = "run_command",
+            description = "在项目根目录执行终端命令（如编译、运行、git操作等）",
+            parameters = mapOf(
+                "type" to "object",
+                "properties" to mapOf(
+                    "command" to mapOf("type" to "string", "description" to "要执行的终端命令")
+                ),
+                "required" to listOf("command")
             )
         ))
     )
@@ -231,48 +288,102 @@ object ai_api_client {
                 Result.success(result_messages)
             }
 
-        } catch (e: Exception) {
+
+    private fun execute_tool(name: String, args: Map<String, String>, root: String): String {
+        return try {
+            when (name) {        } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    private fun execute_tool(name: String, args: Map<String, String>, root: String): String {
-        return try {
-            when (name) {
-                "read_file" -> {
-                    val path = args["path"] ?: return "错误: 缺少 path 参数"
-                    val file = java.io.File(root, path.trimStart('/'))
-                    if (file.isFile) file.readText() else "错误: 文件不存在 $path"
+
+                "search_files" -> {
+                    val pattern = args["pattern"] ?: return "错误: 缺少 pattern 参数"
+                    val rootDir = java.io.File(root)
+                    val results = mutableListOf<String>()
+                    rootDir.walkTopDown().maxDepth(10).forEach { f ->
+                        val relPath = f.relativeTo(rootDir).path
+                        if (f.isFile && relPath.contains(pattern.replace("*", "").replace("?", ""), ignoreCase = true)) {
+                            results.add(relPath)
+                        }
+                    }
+                    if (results.isEmpty()) "未找到匹配的文件"
+                    else results.joinToString("
+")
                 }
-                "write_file" -> {
-                    val path = args["path"] ?: return "错误: 缺少 path 参数"
-                    val content = args["content"] ?: return "错误: 缺少 content 参数"
-                    val file = java.io.File(root, path.trimStart('/'))
-                    file.parentFile?.mkdirs()
-                    file.writeText(content)
-                    "成功写入文件: $path (${content.length} 字符)"
+                "grep_files" -> {
+                    val pattern = args["pattern"] ?: return "错误: 缺少 pattern 参数"
+                    val ext = args["extension"] ?: ""
+                    val rootDir = java.io.File(root)
+                    val results = mutableListOf<String>()
+                    rootDir.walkTopDown().maxDepth(10).forEach { f ->
+                        if (f.isFile && (ext.isBlank() || f.name.endsWith(ext))) {
+                            try {
+                                val content = f.readText()
+                                if (content.contains(pattern, ignoreCase = true)) {
+                                    val relPath = f.relativeTo(rootDir).path
+                                    val lines = content.lines()
+                                    val matchingLines = lines.filterIndexed { i, l -> l.contains(pattern, ignoreCase = true) }
+                                    results.add("$relPath: ${matchingLines.size} 行匹配")
+                                }
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    if (results.isEmpty()) "未找到匹配的内容"
+                    else results.joinToString("
+")
                 }
-                "create_file" -> {
-                    val path = args["path"] ?: return "错误: 缺少 path 参数"
-                    val content = args["content"] ?: ""
-                    val file = java.io.File(root, path.trimStart('/'))
-                    file.parentFile?.mkdirs()
-                    file.writeText(content)
-                    "成功创建文件: $path"
+                "rename_file" -> {
+                    val oldPath = args["old_path"] ?: return "错误: 缺少 old_path 参数"
+                    val newPath = args["new_path"] ?: return "错误: 缺少 new_path 参数"
+                    val oldFile = java.io.File(root, oldPath.trimStart('/'))
+                    val newFile = java.io.File(root, newPath.trimStart('/'))
+                    if (!oldFile.exists()) return "错误: 源文件不存在 $oldPath"
+                    newFile.parentFile?.mkdirs()
+                    if (oldFile.renameTo(newFile)) "成功重命名: $oldPath -> $newPath"
+                    else "错误: 重命名失败"
                 }
-                "delete_file" -> {
-                    val path = args["path"] ?: return "错误: 缺少 path 参数"
-                    val file = java.io.File(root, path.trimStart('/'))
-                    if (file.delete()) "成功删除文件: $path" else "错误: 删除失败 $path"
+                "get_project_info" -> {
+                    val rootDir = java.io.File(root)
+                    if (!rootDir.isDirectory) return "错误: 项目目录不存在"
+                    val allFiles = rootDir.walkTopDown().maxDepth(15).filter { it.isFile }.toList()
+                    val totalSize = allFiles.sumOf { it.length() }
+                    val extensions = allFiles.groupBy { it.extension.ifEmpty { "(无扩展名)" } }.mapValues { it.value.size }
+                    val dirCount = rootDir.walkTopDown().maxDepth(15).filter { it.isDirectory }.count()
+                    val topDirs = rootDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
+                    buildString {
+                        appendLine("📁 项目: ${rootDir.name}")
+                        appendLine("📂 路径: $root")
+                        appendLine("📄 文件总数: ${allFiles.size}")
+                        appendLine("📏 总大小: ${totalSize / 1024} KB")
+                        appendLine("📁 目录数: $dirCount")
+                        appendLine("")
+                        appendLine("📊 文件类型分布:")
+                        extensions.entries.sortedByDescending { it.value }.take(15).forEach { (ext, count) ->
+                            appendLine("  .$ext: $count 个")
+                        }
+                        appendLine("")
+                        appendLine("📂 顶层目录:")
+                        topDirs.forEach { appendLine("  📁 $it") }
+                    }
                 }
-                "list_files" -> {
-                    val dir = args["dir"] ?: ""
-                    val dirFile = java.io.File(root, dir.trimStart('/'))
-                    if (!dirFile.isDirectory) return "错误: 目录不存在 $dir"
-                    dirFile.listFiles()?.map { f ->
-                        val type = if (f.isDirectory) "[DIR]" else "[FILE]"
-                        "$type ${f.name} (${f.length()} bytes)"
-                    }?.joinToString("\n") ?: "空目录"
+                "run_command" -> {
+                    val cmd = args["command"] ?: return "错误: 缺少 command 参数"
+                    try {
+                        val proc = ProcessBuilder()
+                            .directory(java.io.File(root))
+                            .command("sh", "-c", cmd)
+                            .redirectErrorStream(true)
+                            .start()
+                        val output = proc.inputStream.bufferedReader().readText()
+                        val code = proc.waitFor()
+                        if (code == 0) "✅ 命令执行成功 (exit=$code):
+$output"
+                        else "⚠️ 命令完成但有错误 (exit=$code):
+$output"
+                    } catch (e: Exception) {
+                        "错误: 执行命令失败: ${e.message}"
+                    }
                 }
                 else -> "未知工具: $name"
             }
